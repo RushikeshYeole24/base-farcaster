@@ -1,0 +1,7 @@
+{
+  "build": {
+    "env": {},
+    "installCommand": "bun install",
+    "buildCommand": "bun run build"
+  }
+}
