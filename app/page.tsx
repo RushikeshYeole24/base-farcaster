@@ -1,4 +1,4 @@
-import App from '@/components/pages/app'
+import GameContainer from '@/components/game/GameContainer'
 import { APP_URL } from '@/lib/constants'
 import type { Metadata } from 'next'
 
@@ -6,23 +6,23 @@ const frame = {
   version: 'next',
   imageUrl: `${APP_URL}/images/base.png`,
   button: {
-    title: 'Launch Template',
+    title: 'Play Bureau of Magical Things',
     action: {
       type: 'launch_frame',
-      name: 'Base Farcaster MiniApp Template',
+      name: 'Bureau of Magical Things',
       url: APP_URL,
       splashImageUrl: `${APP_URL}/images/splash.png`,
-      splashBackgroundColor: '#f7f7f7',
+      splashBackgroundColor: '#1e1b4b',
     },
   },
 }
 
 export async function generateMetadata(): Promise<Metadata> {
   return {
-    title: 'Base Farcaster MiniApp Template',
+    title: 'Bureau of Magical Things',
     openGraph: {
-      title: 'Base Farcaster MiniApp Template',
-      description: 'A template for building mini-apps on Farcaster and Base',
+      title: 'Bureau of Magical Things',
+      description: 'Mobile-first onchain web game - Respond to magical incidents as a Bureau Field Initiate',
     },
     other: {
       'fc:frame': JSON.stringify(frame),
@@ -31,5 +31,5 @@ export async function generateMetadata(): Promise<Metadata> {
 }
 
 export default function Home() {
-  return <App />
+  return <GameContainer />
 }
