@@ -30,6 +30,7 @@ interface CharacterScore {
   control: number;
   alignment: number;
   lastPlayed: string;
+  completedIncidentIds: string[]; // Track which incidents have been completed
 }
 
 const CHARACTERS = [
@@ -62,7 +63,13 @@ export default function GameContainer() {
     // Load character scores from localStorage
     const saved = localStorage.getItem('bureauCharacterScores');
     if (saved) {
-      setCharacterScores(JSON.parse(saved));
+      const parsed = JSON.parse(saved);
+      // Ensure backward compatibility - add completedIncidentIds if missing
+      const updated = parsed.map((char: CharacterScore) => ({
+        ...char,
+        completedIncidentIds: char.completedIncidentIds || [],
+      }));
+      setCharacterScores(updated);
     }
   }, []);
 
@@ -91,6 +98,9 @@ export default function GameContainer() {
       difficulty: number;
     };
     
+    // Get list of completed incident IDs for current character
+    const completedIds = currentCharacter?.completedIncidentIds || [];
+    
     // First mission is always RuneLock
     if (isFirstMission) {
       incident = {
@@ -104,8 +114,8 @@ export default function GameContainer() {
       };
       setIsFirstMission(false);
     } else {
-      // After first mission, get random missions
-      incident = getRandomIncident();
+      // After first mission, get random missions excluding completed ones
+      incident = getRandomIncident(completedIds);
     }
     
     setGameState((prev) => ({
@@ -141,8 +151,10 @@ export default function GameContainer() {
     }));
 
     // Update character score
-    if (currentCharacter) {
+    if (currentCharacter && gameState.currentIncident) {
       const scoreGained = result.outcome === 'clean' ? 100 : result.outcome === 'partial' ? 60 : 30;
+      const incidentId = gameState.currentIncident.id;
+      
       setCharacterScores(prev => {
         const existing = prev.find(c => c.id === currentCharacter.id);
         if (existing) {
@@ -156,12 +168,24 @@ export default function GameContainer() {
                   control: newStats.control,
                   alignment: newStats.alignment,
                   lastPlayed: new Date().toLocaleString(),
+                  completedIncidentIds: [...c.completedIncidentIds, incidentId],
                 }
               : c
           );
         }
         return prev;
       });
+      
+      // Update current character state
+      setCurrentCharacter(prev => prev ? {
+        ...prev,
+        missionsCompleted: prev.missionsCompleted + 1,
+        totalScore: prev.totalScore + scoreGained,
+        energy: newStats.energy,
+        control: newStats.control,
+        alignment: newStats.alignment,
+        completedIncidentIds: [...prev.completedIncidentIds, incidentId],
+      } : null);
     }
 
     setPhase("result");
@@ -203,6 +227,7 @@ export default function GameContainer() {
         control: INITIAL_STATS.control,
         alignment: INITIAL_STATS.alignment,
         lastPlayed: new Date().toLocaleString(),
+        completedIncidentIds: [], // Initialize empty array for new character
       };
       setCurrentCharacter(newCharacter);
       setCharacterScores(prev => [...prev, newCharacter]);

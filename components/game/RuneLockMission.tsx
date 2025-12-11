@@ -1,8 +1,8 @@
-'use client';
+"use client";
 
-import { useState, useEffect, useRef } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import type { Incident, PlayerStats, MissionResult } from '@/lib/game/types';
+import { useState, useEffect, useRef } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import type { Incident, PlayerStats, MissionResult } from "@/lib/game/types";
 
 interface RuneLockMissionProps {
   incident: Incident;
@@ -36,9 +36,13 @@ const RUNE_TILES = [
 const ORB_START = { x: 3, y: 3 };
 const PLAYER_START = { x: 3, y: 6 };
 const ENEMY_SPAWN = { x: 3, y: 2 };
-const EXIT_DOOR = { x: 3, y: 0 };
+const EXIT_DOOR = { x: 3, y: 1 }; // Moved from y: 0 to y: 1 so it's reachable
 
-export default function RuneLockMission({ incident, playerStats, onComplete }: RuneLockMissionProps) {
+export default function RuneLockMission({
+  incident,
+  playerStats,
+  onComplete,
+}: RuneLockMissionProps) {
   const [playerPos, setPlayerPos] = useState<Position>(PLAYER_START);
   const [orbPos, setOrbPos] = useState<Position>(ORB_START);
   const [playerHealth, setPlayerHealth] = useState(3);
@@ -62,9 +66,9 @@ export default function RuneLockMission({ incident, playerStats, onComplete }: R
   // Timer
   useEffect(() => {
     if (gameOver || doorUnlocked) return;
-    
+
     const timer = setInterval(() => {
-      setTimeElapsed(prev => prev + 1);
+      setTimeElapsed((prev) => prev + 1);
     }, 1000);
 
     return () => clearInterval(timer);
@@ -74,8 +78,8 @@ export default function RuneLockMission({ incident, playerStats, onComplete }: R
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (gameOver) return;
-      
-      if (e.key === ' ') {
+
+      if (e.key === " ") {
         e.preventDefault();
         handleAttack();
       } else {
@@ -87,12 +91,12 @@ export default function RuneLockMission({ incident, playerStats, onComplete }: R
       keysPressed.current.delete(e.key.toLowerCase());
     };
 
-    window.addEventListener('keydown', handleKeyDown);
-    window.addEventListener('keyup', handleKeyUp);
+    window.addEventListener("keydown", handleKeyDown);
+    window.addEventListener("keyup", handleKeyUp);
 
     return () => {
-      window.removeEventListener('keydown', handleKeyDown);
-      window.removeEventListener('keyup', handleKeyUp);
+      window.removeEventListener("keydown", handleKeyDown);
+      window.removeEventListener("keyup", handleKeyUp);
     };
   }, [gameOver, enemy]);
 
@@ -106,13 +110,30 @@ export default function RuneLockMission({ incident, playerStats, onComplete }: R
       let newX = playerPos.x;
       let newY = playerPos.y;
 
-      if (keysPressed.current.has('arrowup') || keysPressed.current.has('w')) newY--;
-      if (keysPressed.current.has('arrowdown') || keysPressed.current.has('s')) newY++;
-      if (keysPressed.current.has('arrowleft') || keysPressed.current.has('a')) newX--;
-      if (keysPressed.current.has('arrowright') || keysPressed.current.has('d')) newX++;
+      if (keysPressed.current.has("arrowup") || keysPressed.current.has("w"))
+        newY--;
+      if (keysPressed.current.has("arrowdown") || keysPressed.current.has("s"))
+        newY++;
+      if (keysPressed.current.has("arrowleft") || keysPressed.current.has("a"))
+        newX--;
+      if (keysPressed.current.has("arrowright") || keysPressed.current.has("d"))
+        newX++;
 
       // Boundary check
-      if (newX < 1 || newX >= ROOM_SIZE - 1 || newY < 1 || newY >= ROOM_SIZE - 1) return;
+      if (
+        newX < 1 ||
+        newX >= ROOM_SIZE - 1 ||
+        newY < 1 ||
+        newY >= ROOM_SIZE - 1
+      )
+        return;
+
+      // Check if reached exit FIRST (before other movement logic)
+      if (doorUnlocked && newX === EXIT_DOOR.x && newY === EXIT_DOOR.y) {
+        setPlayerPos({ x: newX, y: newY });
+        handleComplete(true);
+        return;
+      }
 
       // Check if pushing orb
       if (newX === orbPos.x && newY === orbPos.y) {
@@ -120,11 +141,16 @@ export default function RuneLockMission({ incident, playerStats, onComplete }: R
         const pushY = orbPos.y + (newY - playerPos.y);
 
         // Check if orb can be pushed
-        if (pushX >= 1 && pushX < ROOM_SIZE - 1 && pushY >= 1 && pushY < ROOM_SIZE - 1) {
+        if (
+          pushX >= 1 &&
+          pushX < ROOM_SIZE - 1 &&
+          pushY >= 1 &&
+          pushY < ROOM_SIZE - 1
+        ) {
           setIsPushing(true);
           setOrbPos({ x: pushX, y: pushY });
           setPlayerPos({ x: newX, y: newY });
-          
+
           // Check if orb is on a tile
           setTimeout(() => {
             checkOrbOnTile(pushX, pushY);
@@ -133,11 +159,6 @@ export default function RuneLockMission({ incident, playerStats, onComplete }: R
         }
       } else {
         setPlayerPos({ x: newX, y: newY });
-      }
-
-      // Check if reached exit
-      if (doorUnlocked && newX === EXIT_DOOR.x && newY === EXIT_DOOR.y) {
-        handleComplete(true);
       }
     }, 150);
 
@@ -152,25 +173,43 @@ export default function RuneLockMission({ incident, playerStats, onComplete }: R
       if (enemy.isDashing) return;
 
       // Simple patrol or dash at player
-      const distToPlayer = Math.abs(enemy.position.x - playerPos.x) + Math.abs(enemy.position.y - playerPos.y);
+      const distToPlayer =
+        Math.abs(enemy.position.x - playerPos.x) +
+        Math.abs(enemy.position.y - playerPos.y);
 
       if (distToPlayer <= 3 && Math.random() > 0.5) {
         // Dash at player
-        setEnemy(prev => ({ ...prev, isDashing: true }));
-        
-        const dashX = playerPos.x > enemy.position.x ? 1 : playerPos.x < enemy.position.x ? -1 : 0;
-        const dashY = playerPos.y > enemy.position.y ? 1 : playerPos.y < enemy.position.y ? -1 : 0;
+        setEnemy((prev) => ({ ...prev, isDashing: true }));
+
+        const dashX =
+          playerPos.x > enemy.position.x
+            ? 1
+            : playerPos.x < enemy.position.x
+            ? -1
+            : 0;
+        const dashY =
+          playerPos.y > enemy.position.y
+            ? 1
+            : playerPos.y < enemy.position.y
+            ? -1
+            : 0;
 
         setTimeout(() => {
-          setEnemy(prev => {
+          setEnemy((prev) => {
             const newPos = {
-              x: Math.max(1, Math.min(ROOM_SIZE - 2, prev.position.x + dashX * 2)),
-              y: Math.max(1, Math.min(ROOM_SIZE - 2, prev.position.y + dashY * 2)),
+              x: Math.max(
+                1,
+                Math.min(ROOM_SIZE - 2, prev.position.x + dashX * 2)
+              ),
+              y: Math.max(
+                1,
+                Math.min(ROOM_SIZE - 2, prev.position.y + dashY * 2)
+              ),
             };
 
             // Check collision with player
             if (newPos.x === playerPos.x && newPos.y === playerPos.y) {
-              setPlayerHealth(h => {
+              setPlayerHealth((h) => {
                 const newHealth = h - 1;
                 if (newHealth <= 0) {
                   setGameOver(true);
@@ -188,8 +227,8 @@ export default function RuneLockMission({ incident, playerStats, onComplete }: R
         const angle = (Date.now() / 2000) % (Math.PI * 2);
         const newX = Math.round(ENEMY_SPAWN.x + Math.cos(angle) * 1.5);
         const newY = Math.round(ENEMY_SPAWN.y + Math.sin(angle) * 1.5);
-        
-        setEnemy(prev => ({
+
+        setEnemy((prev) => ({
           ...prev,
           position: {
             x: Math.max(1, Math.min(ROOM_SIZE - 2, newX)),
@@ -203,11 +242,13 @@ export default function RuneLockMission({ incident, playerStats, onComplete }: R
   }, [enemy, playerPos, gameOver]);
 
   const checkOrbOnTile = (x: number, y: number) => {
-    const tileIndex = RUNE_TILES.findIndex(tile => tile.x === x && tile.y === y);
-    
+    const tileIndex = RUNE_TILES.findIndex(
+      (tile) => tile.x === x && tile.y === y
+    );
+
     if (tileIndex !== -1) {
       const tile = RUNE_TILES[tileIndex];
-      
+
       if (tile.isCorrect) {
         // Correct tile!
         setSolvedTiles([tileIndex]);
@@ -226,17 +267,20 @@ export default function RuneLockMission({ incident, playerStats, onComplete }: R
   const handleAttack = () => {
     if (enemy.isDead) return;
 
-    const distToEnemy = Math.abs(enemy.position.x - playerPos.x) + Math.abs(enemy.position.y - playerPos.y);
-    
+    const distToEnemy =
+      Math.abs(enemy.position.x - playerPos.x) +
+      Math.abs(enemy.position.y - playerPos.y);
+
     if (distToEnemy <= 1) {
-      setEnemy(prev => ({ ...prev, isDead: true }));
+      setEnemy((prev) => ({ ...prev, isDead: true }));
     }
   };
 
   const handleComplete = (success: boolean) => {
     setGameOver(true);
-    
-    const outcome: 'clean' | 'partial' | 'failed' = success && playerHealth === 3 ? 'clean' : success ? 'partial' : 'failed';
+
+    const outcome: "clean" | "partial" | "failed" =
+      success && playerHealth === 3 ? "clean" : success ? "partial" : "failed";
     const energyUsed = success ? 15 : 25;
     const controlGained = success ? 15 : -5;
     const alignmentChange = success ? 5 : -3;
@@ -248,8 +292,8 @@ export default function RuneLockMission({ incident, playerStats, onComplete }: R
         energyUsed,
         controlGained,
         storyConsequence: success
-          ? 'Rune lock solved! The ancient chamber opened and the magical threat was contained.'
-          : 'Failed to unlock the rune chamber. The magical energy escaped.',
+          ? "Rune lock solved! The ancient chamber opened and the magical threat was contained."
+          : "Failed to unlock the rune chamber. The magical energy escaped.",
       });
     }, 1000);
   };
@@ -262,7 +306,7 @@ export default function RuneLockMission({ incident, playerStats, onComplete }: R
         <div className="flex gap-1">
           {[...Array(3)].map((_, i) => (
             <span key={i} className="text-2xl">
-              {i < playerHealth ? '❤️' : '🖤'}
+              {i < playerHealth ? "❤️" : "🖤"}
             </span>
           ))}
         </div>
@@ -301,7 +345,8 @@ export default function RuneLockMission({ incident, playerStats, onComplete }: R
             repeat: Infinity,
           }}
           style={{
-            background: 'radial-gradient(circle at 50% 50%, rgba(99, 102, 241, 0.15) 0%, transparent 70%)',
+            background:
+              "radial-gradient(circle at 50% 50%, rgba(99, 102, 241, 0.15) 0%, transparent 70%)",
           }}
         />
 
@@ -310,18 +355,21 @@ export default function RuneLockMission({ incident, playerStats, onComplete }: R
           {[...Array(ROOM_SIZE * ROOM_SIZE)].map((_, i) => {
             const x = i % ROOM_SIZE;
             const y = Math.floor(i / ROOM_SIZE);
-            const isWall = x === 0 || x === ROOM_SIZE - 1 || y === 0 || y === ROOM_SIZE - 1;
+            const isWall =
+              x === 0 || x === ROOM_SIZE - 1 || y === 0 || y === ROOM_SIZE - 1;
 
             return (
               <div
                 key={i}
-                className={`absolute ${isWall ? 'bg-slate-700' : 'bg-slate-800/50'}`}
+                className={`absolute ${
+                  isWall ? "bg-slate-700" : "bg-slate-800/50"
+                }`}
                 style={{
                   left: x * GRID_SIZE,
                   top: y * GRID_SIZE,
                   width: GRID_SIZE,
                   height: GRID_SIZE,
-                  border: '1px solid rgba(100, 116, 139, 0.2)',
+                  border: "1px solid rgba(100, 116, 139, 0.2)",
                 }}
               />
             );
@@ -345,16 +393,24 @@ export default function RuneLockMission({ incident, playerStats, onComplete }: R
               }}
               animate={{
                 boxShadow: isSolved
-                  ? ['0 0 20px rgba(34, 211, 238, 0.8)', '0 0 40px rgba(34, 211, 238, 0.4)', '0 0 20px rgba(34, 211, 238, 0.8)']
+                  ? [
+                      "0 0 20px rgba(34, 211, 238, 0.8)",
+                      "0 0 40px rgba(34, 211, 238, 0.4)",
+                      "0 0 20px rgba(34, 211, 238, 0.8)",
+                    ]
                   : isWrong
-                  ? ['0 0 20px rgba(239, 68, 68, 0.8)']
-                  : ['0 0 10px rgba(34, 211, 238, 0.3)'],
-                backgroundColor: isSolved ? 'rgba(34, 211, 238, 0.2)' : isWrong ? 'rgba(239, 68, 68, 0.2)' : 'rgba(34, 211, 238, 0.1)',
+                  ? ["0 0 20px rgba(239, 68, 68, 0.8)"]
+                  : ["0 0 10px rgba(34, 211, 238, 0.3)"],
+                backgroundColor: isSolved
+                  ? "rgba(34, 211, 238, 0.2)"
+                  : isWrong
+                  ? "rgba(239, 68, 68, 0.2)"
+                  : "rgba(34, 211, 238, 0.1)",
               }}
               transition={{ duration: 1, repeat: isSolved ? Infinity : 0 }}
             >
               <span className="text-3xl opacity-60">
-                {isSolved ? '✓' : '◈'}
+                {isSolved ? "✓" : "◈"}
               </span>
             </motion.div>
           );
@@ -378,9 +434,9 @@ export default function RuneLockMission({ incident, playerStats, onComplete }: R
             className="w-10 h-10 rounded-full bg-gradient-to-br from-purple-400 to-pink-400 flex items-center justify-center"
             animate={{
               boxShadow: [
-                '0 0 20px rgba(192, 132, 252, 0.6)',
-                '0 0 30px rgba(192, 132, 252, 0.8)',
-                '0 0 20px rgba(192, 132, 252, 0.6)',
+                "0 0 20px rgba(192, 132, 252, 0.6)",
+                "0 0 30px rgba(192, 132, 252, 0.8)",
+                "0 0 20px rgba(192, 132, 252, 0.6)",
               ],
             }}
             transition={{ duration: 2, repeat: Infinity }}
@@ -401,16 +457,22 @@ export default function RuneLockMission({ incident, playerStats, onComplete }: R
         >
           <motion.div
             className={`w-12 h-12 rounded-full border-4 flex items-center justify-center ${
-              doorUnlocked ? 'border-yellow-400 bg-yellow-500/20' : 'border-red-500 bg-red-500/20'
+              doorUnlocked
+                ? "border-yellow-400 bg-yellow-500/20"
+                : "border-red-500 bg-red-500/20"
             }`}
             animate={{
               boxShadow: doorUnlocked
-                ? ['0 0 20px rgba(250, 204, 21, 0.8)', '0 0 40px rgba(250, 204, 21, 0.4)', '0 0 20px rgba(250, 204, 21, 0.8)']
-                : ['0 0 10px rgba(239, 68, 68, 0.5)'],
+                ? [
+                    "0 0 20px rgba(250, 204, 21, 0.8)",
+                    "0 0 40px rgba(250, 204, 21, 0.4)",
+                    "0 0 20px rgba(250, 204, 21, 0.8)",
+                  ]
+                : ["0 0 10px rgba(239, 68, 68, 0.5)"],
             }}
             transition={{ duration: 1.5, repeat: Infinity }}
           >
-            <span className="text-2xl">{doorUnlocked ? '🚪' : '🔒'}</span>
+            <span className="text-2xl">{doorUnlocked ? "🚪" : "🔒"}</span>
           </motion.div>
         </motion.div>
 
@@ -438,9 +500,9 @@ export default function RuneLockMission({ incident, playerStats, onComplete }: R
                 className="w-8 h-8 rounded-full bg-white/80 flex items-center justify-center"
                 animate={{
                   boxShadow: [
-                    '0 0 15px rgba(147, 197, 253, 0.8)',
-                    '0 0 25px rgba(147, 197, 253, 0.6)',
-                    '0 0 15px rgba(147, 197, 253, 0.8)',
+                    "0 0 15px rgba(147, 197, 253, 0.8)",
+                    "0 0 25px rgba(147, 197, 253, 0.6)",
+                    "0 0 15px rgba(147, 197, 253, 0.8)",
                   ],
                 }}
                 transition={{ duration: 1.5, repeat: Infinity }}
@@ -471,7 +533,7 @@ export default function RuneLockMission({ incident, playerStats, onComplete }: R
         {[...Array(8)].map((_, i) => {
           const x = (i * 13) % 100;
           const y = (i * 17) % 100;
-          
+
           return (
             <motion.div
               key={i}
@@ -497,7 +559,9 @@ export default function RuneLockMission({ incident, playerStats, onComplete }: R
       {/* Controls */}
       <div className="mt-4 text-center text-sm text-gray-400">
         <p>🎮 Arrow Keys / WASD to move | Space to attack</p>
-        <p className="text-xs mt-1">Push the glowing orb ✦ onto the correct rune tile ◈</p>
+        <p className="text-xs mt-1">
+          Push the glowing orb ✦ onto the correct rune tile ◈
+        </p>
       </div>
 
       {/* Attack button for mobile */}

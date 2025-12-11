@@ -114,8 +114,16 @@ export const ENEMIES: Enemy[] = [
   },
 ];
 
-export function getRandomIncident(): Incident {
-  return INCIDENTS[Math.floor(Math.random() * INCIDENTS.length)];
+export function getRandomIncident(excludeIds: string[] = []): Incident {
+  // Filter out already completed incidents
+  const availableIncidents = INCIDENTS.filter(inc => !excludeIds.includes(inc.id));
+  
+  // If all incidents have been completed, reset and allow all again
+  if (availableIncidents.length === 0) {
+    return INCIDENTS[Math.floor(Math.random() * INCIDENTS.length)];
+  }
+  
+  return availableIncidents[Math.floor(Math.random() * availableIncidents.length)];
 }
 
 export function getRandomSuspect(): Suspect {
