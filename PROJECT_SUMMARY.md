@@ -1,4 +1,4 @@
-# Bureau of Magical Things - Project Summary 📋
+    # Bureau of Magical Things - Project Summary 📋
 
 ## ✅ What Has Been Built
 

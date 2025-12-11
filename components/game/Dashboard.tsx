@@ -1,6 +1,6 @@
-'use client';
+"use client";
 
-import { motion } from 'framer-motion';
+import { motion } from "framer-motion";
 
 interface CharacterScore {
   id: string;
@@ -20,8 +20,14 @@ interface DashboardProps {
   onSelectCharacter?: (characterId: string) => void;
 }
 
-export default function Dashboard({ characterScores, onClose, onSelectCharacter }: DashboardProps) {
-  const sortedScores = [...characterScores].sort((a, b) => b.totalScore - a.totalScore);
+export default function Dashboard({
+  characterScores,
+  onClose,
+  onSelectCharacter,
+}: DashboardProps) {
+  const sortedScores = [...characterScores].sort(
+    (a, b) => b.totalScore - a.totalScore
+  );
   const topScore = sortedScores[0]?.totalScore || 0;
 
   return (
@@ -60,7 +66,9 @@ export default function Dashboard({ characterScores, onClose, onSelectCharacter 
           <div className="text-center py-12">
             <div className="text-6xl mb-4">🎮</div>
             <p className="text-xl text-purple-300">No characters played yet</p>
-            <p className="text-purple-400 mt-2">Start your magical adventure!</p>
+            <p className="text-purple-400 mt-2">
+              Start your magical adventure!
+            </p>
           </div>
         ) : (
           <div className="space-y-4">
@@ -74,18 +82,18 @@ export default function Dashboard({ characterScores, onClose, onSelectCharacter 
                 onClick={() => onSelectCharacter?.(character.id)}
                 className={`relative bg-gradient-to-r ${
                   index === 0
-                    ? 'from-yellow-900/50 to-amber-900/50 border-yellow-500/50'
+                    ? "from-yellow-900/50 to-amber-900/50 border-yellow-500/50"
                     : index === 1
-                    ? 'from-gray-700/50 to-slate-700/50 border-gray-400/50'
+                    ? "from-gray-700/50 to-slate-700/50 border-gray-400/50"
                     : index === 2
-                    ? 'from-orange-900/50 to-amber-800/50 border-orange-600/50'
-                    : 'from-purple-900/30 to-indigo-900/30 border-purple-500/30'
+                    ? "from-orange-900/50 to-amber-800/50 border-orange-600/50"
+                    : "from-purple-900/30 to-indigo-900/30 border-purple-500/30"
                 } backdrop-blur-sm p-6 rounded-2xl border-2 transition-all cursor-pointer`}
               >
                 {/* Rank Badge */}
                 {index < 3 && (
                   <div className="absolute -top-3 -left-3 text-4xl">
-                    {index === 0 ? '🥇' : index === 1 ? '🥈' : '🥉'}
+                    {index === 0 ? "🥇" : index === 1 ? "🥈" : "🥉"}
                   </div>
                 )}
 
@@ -96,8 +104,12 @@ export default function Dashboard({ characterScores, onClose, onSelectCharacter 
                   {/* Character Info */}
                   <div className="flex-1">
                     <div className="flex items-center gap-3 mb-2">
-                      <h3 className="text-2xl font-bold text-white">{character.name}</h3>
-                      <span className="text-sm text-purple-300">#{index + 1}</span>
+                      <h3 className="text-2xl font-bold text-white">
+                        {character.name}
+                      </h3>
+                      <span className="text-sm text-purple-300">
+                        #{index + 1}
+                      </span>
                     </div>
 
                     {/* Stats Grid */}
@@ -132,12 +144,18 @@ export default function Dashboard({ characterScores, onClose, onSelectCharacter 
                     <div className="mb-2">
                       <div className="flex justify-between text-xs text-purple-300 mb-1">
                         <span>Progress</span>
-                        <span>{Math.round((character.totalScore / topScore) * 100)}%</span>
+                        <span>
+                          {Math.round((character.totalScore / topScore) * 100)}%
+                        </span>
                       </div>
                       <div className="h-2 bg-black/30 rounded-full overflow-hidden">
                         <motion.div
                           initial={{ width: 0 }}
-                          animate={{ width: `${(character.totalScore / topScore) * 100}%` }}
+                          animate={{
+                            width: `${
+                              (character.totalScore / topScore) * 100
+                            }%`,
+                          }}
                           transition={{ duration: 1, delay: index * 0.1 }}
                           className="h-full bg-gradient-to-r from-purple-500 to-pink-500"
                         />
@@ -152,20 +170,26 @@ export default function Dashboard({ characterScores, onClose, onSelectCharacter 
 
                   {/* Alignment Indicator */}
                   <div className="hidden md:block text-center">
-                    <div className="text-xs text-purple-300 mb-1">Alignment</div>
+                    <div className="text-xs text-purple-300 mb-1">
+                      Alignment
+                    </div>
                     <div
                       className={`text-2xl ${
                         character.alignment > 30
-                          ? 'text-blue-400'
+                          ? "text-blue-400"
                           : character.alignment < -30
-                          ? 'text-red-400'
-                          : 'text-purple-400'
+                          ? "text-red-400"
+                          : "text-purple-400"
                       }`}
                     >
-                      {character.alignment > 30 ? '😇' : character.alignment < -30 ? '😈' : '😐'}
+                      {character.alignment > 30
+                        ? "😇"
+                        : character.alignment < -30
+                        ? "😈"
+                        : "😐"}
                     </div>
                     <div className="text-sm font-bold">
-                      {character.alignment > 0 ? '+' : ''}
+                      {character.alignment > 0 ? "+" : ""}
                       {character.alignment}
                     </div>
                   </div>
@@ -185,13 +209,18 @@ export default function Dashboard({ characterScores, onClose, onSelectCharacter 
           >
             <div className="bg-gradient-to-br from-purple-800/50 to-pink-800/50 p-4 rounded-xl text-center">
               <div className="text-3xl mb-2">🎭</div>
-              <div className="text-2xl font-bold text-white">{characterScores.length}</div>
+              <div className="text-2xl font-bold text-white">
+                {characterScores.length}
+              </div>
               <div className="text-sm text-purple-200">Characters</div>
             </div>
             <div className="bg-gradient-to-br from-emerald-800/50 to-teal-800/50 p-4 rounded-xl text-center">
               <div className="text-3xl mb-2">⚔️</div>
               <div className="text-2xl font-bold text-white">
-                {characterScores.reduce((sum, c) => sum + c.missionsCompleted, 0)}
+                {characterScores.reduce(
+                  (sum, c) => sum + c.missionsCompleted,
+                  0
+                )}
               </div>
               <div className="text-sm text-emerald-200">Total Missions</div>
             </div>
@@ -204,7 +233,9 @@ export default function Dashboard({ characterScores, onClose, onSelectCharacter 
             </div>
             <div className="bg-gradient-to-br from-blue-800/50 to-cyan-800/50 p-4 rounded-xl text-center">
               <div className="text-3xl mb-2">🏆</div>
-              <div className="text-2xl font-bold text-white">{sortedScores[0]?.name || '-'}</div>
+              <div className="text-2xl font-bold text-white">
+                {sortedScores[0]?.name || "-"}
+              </div>
               <div className="text-sm text-blue-200">Top Player</div>
             </div>
           </motion.div>
