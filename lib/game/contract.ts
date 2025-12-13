@@ -1,40 +1,91 @@
-import { ethers } from 'ethers';
-import type { SBTMetadata } from './types';
+import { type PublicClient, type WalletClient, getContract } from "viem";
+import type { SBTMetadata } from "./types";
 
 // ABI for BureauSBT contract (minimal interface)
 const BUREAU_SBT_ABI = [
-  'function mintMissionRecord(address player, string missionType, string outcome, int8 alignmentChange, uint8 energyUsed, string incidentId, uint8 energySnapshot, uint8 controlSnapshot, int8 alignmentSnapshot) external returns (uint256)',
-  'function getMissionRecord(uint256 tokenId) external view returns (tuple(string missionType, string outcome, int8 alignmentChange, uint8 energyUsed, string incidentId, uint256 timestamp, uint8 energySnapshot, uint8 controlSnapshot, int8 alignmentSnapshot))',
-  'function tokensOfOwner(address owner) external view returns (uint256[])',
-  'function balanceOf(address owner) external view returns (uint256)',
-];
+  {
+    name: "mintMissionRecord",
+    type: "function",
+    stateMutability: "nonpayable",
+    inputs: [
+      { name: "player", type: "address" },
+      { name: "missionType", type: "string" },
+      { name: "outcome", type: "string" },
+      { name: "alignmentChange", type: "int8" },
+      { name: "energyUsed", type: "uint8" },
+      { name: "incidentId", type: "string" },
+      { name: "energySnapshot", type: "uint8" },
+      { name: "controlSnapshot", type: "uint8" },
+      { name: "alignmentSnapshot", type: "int8" },
+    ],
+    outputs: [{ name: "", type: "uint256" }],
+  },
+  {
+    name: "getMissionRecord",
+    type: "function",
+    stateMutability: "view",
+    inputs: [{ name: "tokenId", type: "uint256" }],
+    outputs: [
+      {
+        name: "",
+        type: "tuple",
+        components: [
+          { name: "missionType", type: "string" },
+          { name: "outcome", type: "string" },
+          { name: "alignmentChange", type: "int8" },
+          { name: "energyUsed", type: "uint8" },
+          { name: "incidentId", type: "string" },
+          { name: "timestamp", type: "uint256" },
+          { name: "energySnapshot", type: "uint8" },
+          { name: "controlSnapshot", type: "uint8" },
+          { name: "alignmentSnapshot", type: "int8" },
+        ],
+      },
+    ],
+  },
+  {
+    name: "tokensOfOwner",
+    type: "function",
+    stateMutability: "view",
+    inputs: [{ name: "owner", type: "address" }],
+    outputs: [{ name: "", type: "uint256[]" }],
+  },
+  {
+    name: "balanceOf",
+    type: "function",
+    stateMutability: "view",
+    inputs: [{ name: "owner", type: "address" }],
+    outputs: [{ name: "", type: "uint256" }],
+  },
+] as const;
 
 export class BureauSBTContract {
-  private contract: ethers.Contract | null = null;
-  private signer: ethers.Signer | null = null;
+  private contract: any = null;
+  private walletClient: WalletClient | null = null;
 
   constructor(
-    private contractAddress: string,
-    private provider: ethers.Provider
+    private contractAddress: `0x${string}`,
+    private publicClient: PublicClient
   ) {}
 
-  async connect(signer: ethers.Signer) {
-    this.signer = signer;
-    this.contract = new ethers.Contract(
-      this.contractAddress,
-      BUREAU_SBT_ABI,
-      signer
-    );
+  async connect(walletClient: WalletClient) {
+    this.walletClient = walletClient;
+    this.contract = getContract({
+      address: this.contractAddress,
+      abi: BUREAU_SBT_ABI,
+      client: { public: this.publicClient, wallet: walletClient },
+    });
   }
 
   async mintMissionSBT(
-    playerAddress: string,
+    playerAddress: `0x${string}`,
     metadata: SBTMetadata
   ): Promise<string> {
-    if (!this.contract) throw new Error('Contract not connected');
+    if (!this.contract || !this.walletClient)
+      throw new Error("Contract not connected");
 
     try {
-      const tx = await this.contract.mintMissionRecord(
+      const hash = await this.contract.write.mintMissionRecord([
         playerAddress,
         metadata.missionType,
         metadata.outcome,
@@ -43,35 +94,36 @@ export class BureauSBTContract {
         metadata.incidentId,
         metadata.playerStatsSnapshot.energy,
         metadata.playerStatsSnapshot.control,
-        metadata.playerStatsSnapshot.alignment
-      );
+        metadata.playerStatsSnapshot.alignment,
+      ]);
 
-      const receipt = await tx.wait();
-      return receipt.hash;
+      return hash;
     } catch (error) {
-      console.error('Error minting SBT:', error);
+      console.error("Error minting SBT:", error);
       throw error;
     }
   }
 
-  async getPlayerSBTs(playerAddress: string): Promise<number[]> {
-    if (!this.contract) throw new Error('Contract not connected');
+  async getPlayerSBTs(playerAddress: `0x${string}`): Promise<number[]> {
+    if (!this.contract) throw new Error("Contract not connected");
 
     try {
-      const tokenIds = await this.contract.tokensOfOwner(playerAddress);
+      const tokenIds = await this.contract.read.tokensOfOwner([playerAddress]);
       return tokenIds.map((id: bigint) => Number(id));
     } catch (error) {
-      console.error('Error fetching SBTs:', error);
+      console.error("Error fetching SBTs:", error);
       return [];
     }
   }
 
   async getMissionRecord(tokenId: number): Promise<SBTMetadata | null> {
-    if (!this.contract) throw new Error('Contract not connected');
+    if (!this.contract) throw new Error("Contract not connected");
 
     try {
-      const record = await this.contract.getMissionRecord(tokenId);
-      
+      const record = await this.contract.read.getMissionRecord([
+        BigInt(tokenId),
+      ]);
+
       return {
         missionType: record.missionType as any,
         outcome: record.outcome as any,
@@ -86,19 +138,19 @@ export class BureauSBTContract {
         },
       };
     } catch (error) {
-      console.error('Error fetching mission record:', error);
+      console.error("Error fetching mission record:", error);
       return null;
     }
   }
 
-  async getPlayerBalance(playerAddress: string): Promise<number> {
-    if (!this.contract) throw new Error('Contract not connected');
+  async getPlayerBalance(playerAddress: `0x${string}`): Promise<number> {
+    if (!this.contract) throw new Error("Contract not connected");
 
     try {
-      const balance = await this.contract.balanceOf(playerAddress);
+      const balance = await this.contract.read.balanceOf([playerAddress]);
       return Number(balance);
     } catch (error) {
-      console.error('Error fetching balance:', error);
+      console.error("Error fetching balance:", error);
       return 0;
     }
   }
@@ -106,8 +158,8 @@ export class BureauSBTContract {
 
 // Helper to create contract instance
 export function createBureauSBTContract(
-  contractAddress: string,
-  provider: ethers.Provider
+  contractAddress: `0x${string}`,
+  publicClient: PublicClient
 ): BureauSBTContract {
-  return new BureauSBTContract(contractAddress, provider);
+  return new BureauSBTContract(contractAddress, publicClient);
 }
