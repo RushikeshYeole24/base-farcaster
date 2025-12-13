@@ -10,7 +10,14 @@
     "webhookUrl": "https://https://base-farcaster-r91u.vercel.app//api/webhook",
     "subtitle": "Bringing magic to life!",
     "description": "Bringing magic to life!",
-    "primaryCategory": "games"
+    "primaryCategory": "games",
+    "tags": ["games"],
+    "heroImageUrl": "https://ex.co/og.png",
+    "tagline": "Save instantly",
+    "ogTitle": "Example Mini App",
+    "ogDescription": "Easy to manage portfolio.",
+    "ogImageUrl": "https://ex.co/og.png",
+    "noindex": true
   },
   "accountAssociation": {
     "header": "eyJmaWQiOjEzODgyNTUsInR5cGUiOiJhdXRoIiwia2V5IjoiMHg1OWY3NGNkRTE0MjhhOUVhNGI0OTdBYmVENjRmODY3MENkQTQ3QjczIn0",
